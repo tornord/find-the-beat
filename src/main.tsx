@@ -1,12 +1,8 @@
 import { css, Global } from "@emotion/react";
-import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
-import { BeatApp } from "./BeatApp";
-// import { EmbedControllerProvider } from "./EmbedControllerContext";
-// import { TrackList } from "./TrackList";
-
-const round20 = (n: number) => Math.round(n * 20) / 20;
+import { App } from "./App";
+import { SpotifyProvider } from "./spotify/SpotifyContext";
 
 const GlobalStyle = () => (
   <Global
@@ -52,113 +48,15 @@ export const tracks = [
   { id: "3vnbxQMKngx8r8keykJexy", imageUrl: "https://i.scdn.co/image/ab67616d00001e02cd807091ce17b1f5cf4fdc04" }, // Loco Pero Feliz
 ];
 
-interface SpotifyEmbedController {
-  addListener: (
-    event: "playback_update",
-    callback: (e: { data: { position: number; isPaused: boolean } }) => void
-  ) => void;
-  options: { uri: string };
-}
-
-interface IFrameAPI {
-  createController: (
-    element: HTMLElement,
-    options: { uri: string },
-    callback: (controller: SpotifyEmbedController) => void
-  ) => void;
-}
-
-interface SpotifyPlayerChangeEvent {
-  isPaused: boolean;
-  trackId: string | null;
-  playStart: number | null;
-}
-
-declare global {
-  interface Window {
-    onSpotifyIframeApiReady?: (iFrameAPI: IFrameAPI) => void;
-  }
-}
-
-interface SpotifyPlayerProps {
-  startTrackId: string;
-  onChange?: (e: SpotifyPlayerChangeEvent) => void;
-}
-
-function SpotifyPlayer({ startTrackId, onChange }: SpotifyPlayerProps) {
-  const elRef = useRef<HTMLDivElement>(null);
-  const [embedController, setEmbedController] = useState<SpotifyEmbedController | null>(null);
-  const [isPaused, setIsPaused] = useState(true);
-  const [playStart, setPlayStart] = useState<number | null>(null);
-  // const refPlayStart = useRef<number | null>(playStart);
-  const [trackId, setTrackId] = useState<string | null>(startTrackId);
-  const trackIdRef = useRef(trackId);
-
-  useEffect(() => {
-    if (!trackIdRef.current) return;
-    window.onSpotifyIframeApiReady = (iFrameAPI: IFrameAPI) => {
-      const el = elRef.current;
-      if (!el) return;
-      const callback = (controller: SpotifyEmbedController) => {
-        setEmbedController(controller);
-      };
-      const uri = `https://open.spotify.com/track/${trackIdRef.current}`;
-      iFrameAPI.createController(el, { uri }, callback);
-    };
-  }, [trackIdRef.current]);
-  useEffect(() => {
-    embedController?.addListener("playback_update", (e: { data: { position: number; isPaused: boolean } }) => {
-      let t = null;
-      if (!e.data.isPaused) {
-        const s = e.data.position / 1000;
-        t = round20(Date.now() / 1000 - s);
-      }
-      setPlayStart(t);
-      setIsPaused(e.data.isPaused);
-      let tid: string | null = null;
-      if (embedController) {
-        const m = embedController.options.uri.match(/track\/(.+)/);
-        if (m) {
-          tid = m[1];
-        }
-      }
-      setTrackId(tid);
-    });
-  }, [embedController]);
-
-  useEffect(() => {
-    onChange?.({ isPaused, trackId, playStart: playStart });
-  }, [isPaused, trackId, playStart]);
-
-  // console.log("SpotifyPlayer", playStart);
-  return <div ref={elRef} id="embed-iframe"></div>;
-}
-
-interface AppProps {
-  startTrackId: string;
-}
-
-function App({ startTrackId }: AppProps) {
-  const [state, setState] = useState<SpotifyPlayerChangeEvent>({ isPaused: true, trackId: startTrackId, playStart: null });
-  return (
-    <>
-      <SpotifyPlayer startTrackId={startTrackId} onChange={(e) => setState(e)} />
-      {state.trackId ? (
-        <BeatApp isPaused={state.isPaused} trackId={state.trackId!} playStart={state.playStart} />
-      ) : null}
-    </>
-  );
-}
-
 const rootNode = document.getElementById("root");
 const root = createRoot(rootNode!);
 root.render(
   <>
     <GlobalStyle />
-    {/* <App startTrackId={tracks[4].id} /> */}
-    <App startTrackId={"4U8a3PPOICUqRzva61vFv6"} />
-    {/* <EmbedControllerProvider value={embedController}>
-    </EmbedControllerProvider> */}
+    <SpotifyProvider>
+      {/* <App startTrackId={tracks[4].id} /> */}
+      <App startTrackId={"4U8a3PPOICUqRzva61vFv6"} />
+    </SpotifyProvider>
   </>
 );
 
