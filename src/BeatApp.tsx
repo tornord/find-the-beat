@@ -160,7 +160,7 @@ interface BeatAppProps {
 export function BeatApp({ isPaused, trackId, playStart }: BeatAppProps) {
   // const embedController = useEmbedController();
   const [clickedTimes, setClickedTimes] = useState<number[]>(getInitialClickTimes(trackId));
-  const refBeatData = useRef<BeatAnalysis>();
+  const refBeatData = useRef<BeatAnalysis | undefined>(undefined);
   const refPlayStart = useRef<number | null>(playStart);
   refPlayStart.current = playStart;
   useMemo(() => {
@@ -225,7 +225,7 @@ export function BeatApp({ isPaused, trackId, playStart }: BeatAppProps) {
         </button>
       </div>
       <div className="grid">
-        {[...Array(32)].map((d, i) => (
+        {[...Array(32)].map((_, i) => (
           <div key={i} className={clsx("cell", i % 4 === 0 ? "capo" : "", i === beat.step ? "active" : "")}>
             {i % 4 === 0 ? i / 4 + 1 : " "}
           </div>

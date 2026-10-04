@@ -1,4 +1,4 @@
-const { abs, min, round, sqrt } = Math;
+const { abs, round, sqrt } = Math;
 
 export function weightedSumSqr(arr: number[], weights: number[]) {
   return arr.reduce((a, b, i) => a + weights[i] * b ** 2, 0);

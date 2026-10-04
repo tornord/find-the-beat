@@ -39,7 +39,7 @@ const GlobalStyle = () => (
   />
 );
 
-const tracks = [
+export const tracks = [
   { id: "0eU5RvAuflvtcrRVPsdiBt", imageUrl: "https://i.scdn.co/image/ab67616d00001e02520bcd73cf5ac6df86c913fb" }, // La Llave = 3.3
   { id: "0WJqcKDASS5OCuPXs4iUTQ", imageUrl: "https://i.scdn.co/image/ab67616d00001e027899b244fce713e6a1d16895" }, // Caminando = 3.4
   { id: "7DgaZInP8MEGkyAUI0Ygbm", imageUrl: "https://i.scdn.co/image/ab67616d00001e0264d92b73835afbaf2d7a08c4" }, // Ay Mi Maria = 3.5
@@ -52,14 +52,32 @@ const tracks = [
   { id: "3vnbxQMKngx8r8keykJexy", imageUrl: "https://i.scdn.co/image/ab67616d00001e02cd807091ce17b1f5cf4fdc04" }, // Loco Pero Feliz
 ];
 
+interface SpotifyEmbedController {
+  addListener: (
+    event: "playback_update",
+    callback: (e: { data: { position: number; isPaused: boolean } }) => void
+  ) => void;
+  options: { uri: string };
+}
+
 interface IFrameAPI {
-  createController: (element: HTMLElement, options: { uri: string }) => void;
+  createController: (
+    element: HTMLElement,
+    options: { uri: string },
+    callback: (controller: SpotifyEmbedController) => void
+  ) => void;
 }
 
 interface SpotifyPlayerChangeEvent {
   isPaused: boolean;
   trackId: string | null;
   playStart: number | null;
+}
+
+declare global {
+  interface Window {
+    onSpotifyIframeApiReady?: (iFrameAPI: IFrameAPI) => void;
+  }
 }
 
 interface SpotifyPlayerProps {
@@ -69,7 +87,7 @@ interface SpotifyPlayerProps {
 
 function SpotifyPlayer({ startTrackId, onChange }: SpotifyPlayerProps) {
   const elRef = useRef<HTMLDivElement>(null);
-  const [embedController, setEmbedController] = useState<unknown | null>(null);
+  const [embedController, setEmbedController] = useState<SpotifyEmbedController | null>(null);
   const [isPaused, setIsPaused] = useState(true);
   const [playStart, setPlayStart] = useState<number | null>(null);
   // const refPlayStart = useRef<number | null>(playStart);
@@ -79,11 +97,13 @@ function SpotifyPlayer({ startTrackId, onChange }: SpotifyPlayerProps) {
   useEffect(() => {
     if (!trackIdRef.current) return;
     window.onSpotifyIframeApiReady = (iFrameAPI: IFrameAPI) => {
-      const callback = (e: unknown) => {
-        setEmbedController(e);
+      const el = elRef.current;
+      if (!el) return;
+      const callback = (controller: SpotifyEmbedController) => {
+        setEmbedController(controller);
       };
       const uri = `https://open.spotify.com/track/${trackIdRef.current}`;
-      iFrameAPI.createController(elRef.current, { uri }, callback);
+      iFrameAPI.createController(el, { uri }, callback);
     };
   }, [trackIdRef.current]);
   useEffect(() => {
@@ -119,7 +139,7 @@ interface AppProps {
 }
 
 function App({ startTrackId }: AppProps) {
-  const [state, setState] = useState({ isPaused: true, trackId: startTrackId, playStart: null });
+  const [state, setState] = useState<SpotifyPlayerChangeEvent>({ isPaused: true, trackId: startTrackId, playStart: null });
   return (
     <>
       <SpotifyPlayer startTrackId={startTrackId} onChange={(e) => setState(e)} />

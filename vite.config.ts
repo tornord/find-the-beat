@@ -30,7 +30,7 @@ export default defineConfig({
     exclude: [...configDefaults.exclude],
     globals: true,
     testTimeout: 3000,
-    reporters: ["basic"],
+    reporters: ["default"],
     passWithNoTests: true,
     logHeapUsage: true,
   },

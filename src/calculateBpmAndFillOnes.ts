@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 function calculateBpmAndFillOnes(ones: number[]): { bpm: number; allOnes: number[] } {
   // Calculate time intervals between consecutive "1" beats
   const intervals: number[] = [];
